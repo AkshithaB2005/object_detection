@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Object Detection with Voice</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <style>
+    body { text-align: center; font-family: Arial, sans-serif; }
+    video, canvas { position: absolute; left: 50%; transform: translateX(-50%); top: 10%; }
+    #result { margin-top: 500px; font-size: 18px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>Say "detect and show" to start detection</h1>
+<video id="video" autoplay playsinline width="640" height="480"></video>
+<canvas id="canvas"></canvas>
+<p id="result">Listening for command...</p>
+
+<script>
+  let model;
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+  const resultText = document.getElementById("result");
+
+  // ✅ Load COCO-SSD Model
+  async function loadModel() {
+      model = await cocoSsd.load();
+      console.log("✅ Model Loaded!");
+  }
+  loadModel();
+
+  // ✅ Start Camera
+  async function startCamera() {
+      try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+      } catch (error) {
+          console.error("❌ Camera Access Denied:", error);
+      }
+  }
+  startCamera();
+
+  // ✅ Object Detection Function
+  async function detectObjects() {
+      if (!model) {
+          console.log("⏳ Model still loading...");
+          return;
+      }
+
+      // Capture Frame
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Detect Objects
+      const predictions = await model.detect(video);
+      console.log("📸 Detected Objects:", predictions);
+
+      if (predictions.length === 0) {
+          resultText.innerHTML = "❌ No objects detected!";
+          return;
+      }
+
+      // Show Detected Objects
+      resultText.innerHTML = "✅ Objects Detected:<br>";
+      predictions.forEach(prediction => {
+          const [x, y, width, height] = prediction.bbox;
+
+          // Draw Bounding Box
+          ctx.strokeStyle = "red";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, width, height);
+
+          // Draw Label
+          ctx.fillStyle = "red";
+          ctx.font = "18px Arial";
+          ctx.fillText(prediction.class, x, y > 20 ? y - 10 : y + 20);
+
+          // Show Object Names
+          resultText.innerHTML += `${prediction.class} (${Math.round(prediction.score * 100)}%)<br>`;
+      });
+  }
+
+  // ✅ Speech Recognition
+  window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+
+  recognition.onresult = function(event) {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      console.log("🎤 You said:", transcript);
+
+      if (transcript === "detect and show") {
+          detectObjects();
+      }
+  };
+
+  // Start Listening for Voice Command
+  function startListening() {
+      recognition.start();
+      console.log("🎙 Listening for 'detect and show'...");
+  }
+  startListening();
+</script>
+
+</body>
+</html>
