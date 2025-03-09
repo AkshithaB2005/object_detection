@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Permissions-Policy" content="camera=*, microphone=*, geolocation=*">
   <title>Object Detection with Voice</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -64,14 +62,11 @@
 
       if (predictions.length === 0) {
           resultText.innerHTML = "❌ No objects detected!";
-          speakText("No objects detected.");
           return;
       }
 
       // Show Detected Objects
       resultText.innerHTML = "✅ Objects Detected:<br>";
-      let detectedNames = [];
-
       predictions.forEach(prediction => {
           const [x, y, width, height] = prediction.bbox;
 
@@ -86,13 +81,8 @@
           ctx.fillText(prediction.class, x, y > 20 ? y - 10 : y + 20);
 
           // Show Object Names
-          detectedNames.push(prediction.class);
-          resultText.innerHTML += `${prediction.class} (${Math.round(prediction.score * 100)}%)<br>`;
+          resultText.innerHTML += ${prediction.class} (${Math.round(prediction.score * 100)}%)<br>;
       });
-
-      // Speak Detected Objects
-      const objectNames = detectedNames.join(", ");
-      speakText(`I detected: ${objectNames}`);
   }
 
   // ✅ Speech Recognition
@@ -114,26 +104,9 @@
   // Start Listening for Voice Command
   function startListening() {
       recognition.start();
-      console.log("🎙️ Listening for 'detect and show'...");
+      console.log("🎙 Listening for 'detect and show'...");
   }
   startListening();
-
-  // ✅ Speak Function (Text-to-Speech)
-  function speakText(text) {
-      const speech = new SpeechSynthesisUtterance();
-      speech.text = text;
-      speech.lang = "en-US";
-      speech.volume = 1;
-      speech.rate = 1;
-      speech.pitch = 1;
-      window.speechSynthesis.speak(speech);
-  }
-
-
-   function detectObjects() {
-      console.log("Detecting objects...");
-      detectObjectsWithModel(); // ✅ Call the object detection function
-  }
 </script>
 
 </body>
